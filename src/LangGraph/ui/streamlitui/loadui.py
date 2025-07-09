@@ -20,6 +20,7 @@ class LoadStreamlitUI:
             # LLM selection
             self.user_controls["selected_llm"] = st.selectbox("Select LLM", llm_options)
 
+            # User choose Groq LLM 
             if self.user_controls["selected_llm"] == "Groq":
                 groq_model_options = self.config.get_groq_model_options()
                 self.user_controls["selected_groq_model"] = st.selectbox("Select Model", groq_model_options)
@@ -27,7 +28,13 @@ class LoadStreamlitUI:
                 # Validate API key
                 if not self.user_controls["API_KEY"]:
                     st.warning("Please enter your API key to proceed.")
-        
+            elif self.user_controls["selected_llm"] == "OpenAI":
+                openai_model_options = self.config.get_openai_model_options()
+                self.user_controls["selected_openai_model"] = st.selectbox("Select Model", openai_model_options)
+                self.user_controls["API_KEY"] = st.session_state["API_KEY"] = st.text_input("API Key", type="password")
+                # Validate API key
+                if not self.user_controls["API_KEY"]:
+                    st.warning("Please enter your API key to proceed.")
             # Usecase selection
             self.user_controls["selected_usecase"] = st.selectbox("Select Usecases", usecase_options)
 

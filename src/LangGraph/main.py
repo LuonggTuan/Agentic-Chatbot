@@ -1,6 +1,7 @@
 import streamlit as st
 from src.LangGraph.ui.streamlitui.loadui import LoadStreamlitUI
 from src.LangGraph.LLMs.groqllm import GroqLLM
+from src.LangGraph.LLMs.openaillm import OpenAILLM
 from src.LangGraph.graph.graph_builder import GraphBuilder
 from src.LangGraph.ui.streamlitui.display_result import DisplayResultStreamlit
 
@@ -17,8 +18,18 @@ def load_langgraph_agenticai_app():
 
     if user_message:
         try:
+            # Configure the LLM based on user input
+            sellected_llm = user_input.get("selected_llm")
+            
             ## Configure The LLM's
-            obj_llm_config=GroqLLM(user_contols_input=user_input)
+            if sellected_llm == "Groq":
+                obj_llm_config=GroqLLM(user_controls_input=user_input)
+            elif sellected_llm == "OpenAI":
+                obj_llm_config=OpenAILLM(user_controls_input=user_input)
+            else:
+                st.error(f"Error: Unsupported LLM selected: {sellected_llm}")
+                return
+
             model=obj_llm_config.get_llm_model()
 
             if not model:
@@ -29,11 +40,10 @@ def load_langgraph_agenticai_app():
             usecase=user_input.get("selected_usecase")
 
             if not usecase:
-                    st.error("Error: No use case selected.")
-                    return
+                st.error("Error: No use case selected.")
+                return
             
             ## Graph Builder
-
             graph_builder=GraphBuilder(model)
             try:
                  graph=graph_builder.setup_graph(usecase)
