@@ -2,6 +2,7 @@ import streamlit as st
 import os
 
 from src.LangGraph.ui.uiconfigfile import Config
+from src.LangGraph.vectorstore.file_ingestion import ingest_uploaded_file
 
 class LoadStreamlitUI:
     def __init__(self):
@@ -13,6 +14,7 @@ class LoadStreamlitUI:
         st.header("🤖 " + self.config.get_page_title())
         st.session_state.timeframe = ''
         st.session_state.IsFetchButtonClicked = False
+
 
         with st.sidebar:
             # Get options from config
@@ -40,7 +42,7 @@ class LoadStreamlitUI:
             # Usecase selection
             self.user_controls["selected_usecase"] = st.selectbox("Select Usecases", usecase_options)
 
-            if self.user_controls["selected_usecase"] == "Chatbot With WebTool" or self.user_controls["selected_usecase"] == "AI News":
+            if self.user_controls["selected_usecase"] == "Chatbot With WebTool" or self.user_controls["selected_usecase"] == "AI News" or self.user_controls["selected_usecase"] == "Chatbot with RAG":
                 os.environ["TAVILY_API_KEY"] = self.user_controls["TAVILY_API_KEY"] = st.session_state["TAVILY_API_KEY"] = st.text_input("TAVILY API Key", type="password")
                 # Validate TAVILY API key
                 if not self.user_controls["TAVILY_API_KEY"]:
@@ -58,5 +60,39 @@ class LoadStreamlitUI:
                 if st.button("Fetch AI News", use_container_width=True):
                     st.session_state.IsFetchButtonClicked = True
                     st.session_state.time_frame = time_frame
+            
+            if self.user_controls["selected_usecase"] == "Chatbot with RAG":
+                # Sellect embedding model
+                embedding_model_options = self.config.get_embedding_model_options()
+                self.user_controls["selected_embedding_model"] = st.selectbox("Select Embedding Model", embedding_model_options)
+
+                # upload file for RAG
+                st.subheader("📂 Upload Knowledge Files for RAG")
+
+                uploaded_file = st.file_uploader(
+                    "Upload a file (PDF, DOCX, or TXT)",
+                    type=["pdf", "docx", "txt"],
+                    help="Upload a document to serve as knowledge base for RAG")
+
+                if uploaded_file is not None:
+                    self.user_controls["uploaded_file"] = uploaded_file
+                    file_details = {
+                        "filename": uploaded_file.name,
+                        "filetype": uploaded_file.type,
+                        "filesize": uploaded_file.size
+                    }
+                    st.success(f"Uploaded {file_details['filename']} successfully!")
+
+                    vectorstore_path = "src/LangGraph/vectorstore/store"
+                    if st.button("Process File", use_container_width=True):
+                        with st.spinner("🔄 Processing file and uploading to vectorstore..."):
+                            result = ingest_uploaded_file(uploaded_file, self.user_controls["selected_embedding_model"], vectorstore_path)
+                            if result:
+                                st.success("File processed and uploaded to vectorstore successfully!")
+                            else:
+                                st.error("Failed to process and upload file to vectorstore.")
+                else:
+                    self.user_controls["uploaded_file"] = None
+            
                 
         return self.user_controls

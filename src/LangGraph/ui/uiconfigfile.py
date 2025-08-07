@@ -19,3 +19,6 @@ class Config:
 
     def get_page_title(self):
         return self.config["DEFAULT"].get("PAGE_TITLE")
+
+    def get_embedding_model_options(self):
+        return self.config["DEFAULT"].get("EMBEDDING_MODEL_OPTIONS").split(", ")
