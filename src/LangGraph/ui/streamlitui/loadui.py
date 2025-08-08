@@ -73,7 +73,8 @@ class LoadStreamlitUI:
                     "Upload a file (PDF, DOCX, or TXT)",
                     type=["pdf", "docx", "txt"],
                     help="Upload a document to serve as knowledge base for RAG")
-
+                
+                # Process uploaded file
                 if uploaded_file is not None:
                     self.user_controls["uploaded_file"] = uploaded_file
                     file_details = {
@@ -91,8 +92,9 @@ class LoadStreamlitUI:
                                 st.success("File processed and uploaded to vectorstore successfully!")
                             else:
                                 st.error("Failed to process and upload file to vectorstore.")
+                        self.user_controls["vectorstore_path"] = vectorstore_path          
                 else:
                     self.user_controls["uploaded_file"] = None
+                    self.user_controls["vectorstore_path"] = None
             
-                
         return self.user_controls

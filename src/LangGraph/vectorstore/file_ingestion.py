@@ -12,7 +12,7 @@ def ingest_uploaded_file(uploaded_file, embedding_model: str, vectorstore_path: 
         tmp_file_path = tmp_file.name
 
     try:
-        # Chọn loader phù hợp
+        # Sellect loader
         if suffix == ".txt":
             loader = TextLoader(tmp_file_path, encoding='utf-8')
         elif suffix == ".pdf":
@@ -22,15 +22,15 @@ def ingest_uploaded_file(uploaded_file, embedding_model: str, vectorstore_path: 
         else:
             raise ValueError("Unsupported file type")
 
-        # Tải và chia nhỏ văn bản
+        # Load and split documents
         documents = loader.load()
         text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=100)
         chunks = text_splitter.split_documents(documents)
         print(chunks)
-        # Tải mô hình embedding
+        # Load embedding model
         embedding_model = AllMiniLMModel(embedding_model).get_embedding_model()
 
-        # Đưa vào vectorstore
+        # Add to vectorstore
         vectorstore = Chroma.from_documents(chunks, embedding_model, persist_directory=vectorstore_path)
 
         if len(chunks):
@@ -40,6 +40,10 @@ def ingest_uploaded_file(uploaded_file, embedding_model: str, vectorstore_path: 
             return False
 
     finally:
-        # Xoá file tạm nếu tồn tại
+        # Remove temporary file if it exists
         if os.path.exists(tmp_file_path):
             os.remove(tmp_file_path)
+
+def get_retriever(vectorstore_path: str, embedding_model: str):
+    vectorstore = Chroma(persist_directory=vectorstore_path, embedding_model=embedding_model)
+    return vectorstore.as_retriever(search_kwargs={"k": 5})

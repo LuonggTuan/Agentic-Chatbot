@@ -1,11 +1,14 @@
 from langgraph.graph import StateGraph
 from src.LangGraph.state.state import State
+from src.LangGraph.state.state import StateRAG
 from langgraph.graph import START,END
 from src.LangGraph.nodes.basic_chatbot_node import BasicChatbotNode
 from src.LangGraph.tools.search_tool import get_tools, create_tool_node
 from langgraph.prebuilt import tools_condition,ToolNode
 from src.LangGraph.nodes.chatbot_with_Tool_node import ChatbotWithToolNode
 from src.LangGraph.nodes.ai_news_node import AiNewsNode
+from src.LangGraph.nodes.chatbot_rag import ChatbotWithRAG
+from langgraph.checkpoint.memory import MemorySaver
 
 class GraphBuilder:
     def __init__(self,model):
@@ -79,3 +82,41 @@ class GraphBuilder:
         elif usecase == "AI News":
             self.ai_news_builder_graph()
         return self.graph_builder.compile()
+
+class RAGGraphBuilder(GraphBuilder):
+    def __init__(self,model, vectorstore_path, embedding_model):
+        self.llm=model
+        self.graph_builder=StateGraph(State)
+        self.rag_graph_builder=StateGraph(StateRAG)
+        self.vectorstore_path = vectorstore_path
+        self.embedding_model = embedding_model
+
+    def ai_chatbot_with_rag_builder_graph(self):
+
+        self.rag_chatbot_node = ChatbotWithRAG(self.llm, self.vectorstore_path, self.embedding_model)
+
+        self.rag_graph_builder.add_node("retrieve_internal", self.rag_chatbot_node.internal_retrieve_node)
+        self.rag_graph_builder.add_node("check_recall", self.rag_chatbot_node.check_recall_node)
+        self.rag_graph_builder.add_node("use_rag", self.rag_chatbot_node.rag_node)
+        self.rag_graph_builder.add_node("use_tavily", self.rag_chatbot_node.tavily_tool_node)
+
+        self.rag_graph_builder.set_entry_point("retrieve_internal")
+        self.rag_graph_builder.add_edge("retrieve_internal", "check_recall")
+        self.rag_graph_builder.add_conditional_edges(
+            "check_recall", 
+            self.rag_chatbot_node.route_decision, {
+                "use_rag": "use_rag",
+                "use_tavily": "use_tavily"
+            }
+        )
+        self.rag_graph_builder.add_edge("use_rag", END)
+        self.rag_graph_builder.add_edge("use_tavily", END)
+    
+    def setup_graph(self, usecase: str):
+        """
+        Sets up the graph for the selected use case.
+        """
+        memory = MemorySaver()
+        if usecase == "Chatbot with RAG":
+            self.ai_chatbot_with_rag_builder_graph()
+        return self.rag_graph_builder.compile(checkpointer=memory)
