@@ -2,7 +2,7 @@ import streamlit as st
 from src.LangGraph.ui.streamlitui.loadui import LoadStreamlitUI
 from src.LangGraph.LLMs.groqllm import GroqLLM
 from src.LangGraph.LLMs.openaillm import OpenAILLM
-from src.LangGraph.graph.graph_builder import GraphBuilder
+from src.LangGraph.graph.graph_builder import GraphBuilder, RAGGraphBuilder
 from src.LangGraph.ui.streamlitui.display_result import DisplayResultStreamlit
 
 def load_langgraph_agenticai_app():
@@ -47,11 +47,20 @@ def load_langgraph_agenticai_app():
                 return
             
             ## Graph Builder
-            graph_builder=GraphBuilder(model)
+            if usecase == "Chatbot With RAG":
+                vectorstore_path = user_input.get("vectorstore_path")
+                embedding_model = user_input.get("embedding_model")
+                if not vectorstore_path or not embedding_model:
+                    st.error("Error: Vectorstore path or embedding model not provided.")
+                    return
+                graph_builder = RAGGraphBuilder(model, vectorstore_path, embedding_model)
+            else:
+                graph_builder = GraphBuilder(model)
+
             try:
-                graph=graph_builder.setup_graph(usecase)
+                graph = graph_builder.setup_graph(usecase)
                 print(user_message)
-                DisplayResultStreamlit(usecase,graph,user_message).display_result_on_ui()
+                DisplayResultStreamlit(usecase, graph, user_message).display_result_on_ui()
             except Exception as e:
                 st.error(f"Error: Graph set up failed- {e}")
                 return
