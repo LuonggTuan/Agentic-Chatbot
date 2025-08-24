@@ -90,11 +90,17 @@ class LoadStreamlitUI:
                             result = ingest_uploaded_file(uploaded_file, self.user_controls["selected_embedding_model"], vectorstore_path)
                             if result:
                                 st.success("File processed and uploaded to vectorstore successfully!")
+                                self.user_controls["vectorstore_path"] = vectorstore_path
+                                self.user_controls["embedding_model"] = self.user_controls["selected_embedding_model"]
+                                st.session_state["vectorstore_path"] = vectorstore_path
+                                st.session_state["embedding_model"] = self.user_controls["selected_embedding_model"]
                             else:
                                 st.error("Failed to process and upload file to vectorstore.")
-                        self.user_controls["vectorstore_path"] = vectorstore_path          
+                                self.user_controls["vectorstore_path"] = None
+                                self.user_controls["embedding_model"] = None
+                                st.session_state["vectorstore_path"] = None
+                                st.session_state["embedding_model"] = None         
                 else:
                     self.user_controls["uploaded_file"] = None
-                    self.user_controls["vectorstore_path"] = None
             
         return self.user_controls

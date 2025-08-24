@@ -1,6 +1,7 @@
 import streamlit as st
 from langchain_core.messages import HumanMessage,AIMessage,ToolMessage
 import json
+from src.LangGraph.state.state import StateRAG
 
 class DisplayResultStreamlit:
     def __init__(self,usecase,graph,user_message):
@@ -52,4 +53,37 @@ class DisplayResultStreamlit:
                 except Exception as e:
                     st.error(f"An error occurred: {str(e)}")
         elif usecase == "Chatbot with RAG":
-            pass
+            # Chuẩn bị state ban đầu với message từ người dùng
+            initial_state = StateRAG(
+                messages=[HumanMessage(content=user_message)],
+                retrieve_docs=[],
+                tavily_results=[],
+                answer="",
+                recall_check_result=""
+            )
+
+            # Gọi graph, truyền thread_id để MemorySaver nhớ được
+            result_state = graph.invoke(
+                initial_state,
+                config={"configurable": {"thread_id": "rag_session_1"}}
+            )
+
+            # Hiển thị message người dùng
+            with st.chat_message("user"):
+                st.write(user_message)
+
+            # Hiển thị câu trả lời cuối cùng từ RAG/Tavily
+            with st.chat_message("assistant"):
+                st.write(result_state["answer"])
+
+                # Nếu có nguồn tài liệu từ retrieve_docs
+                if result_state["retrieve_docs"]:
+                    with st.expander("Nguồn từ RAG"):
+                        for doc in result_state["retrieve_docs"]:
+                            st.markdown(f"- {doc}")
+
+                # Nếu có kết quả tìm kiếm từ Tavily
+                if result_state["tavily_results"]:
+                    with st.expander("Kết quả từ Tavily"):
+                        for res in result_state["tavily_results"]:
+                            st.markdown(f"- {res}")

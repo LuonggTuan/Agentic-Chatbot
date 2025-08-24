@@ -9,9 +9,9 @@ class State(TypedDict):
     """
     messages: Annotated[List,add_messages]
 
-class StateRAG():
+class StateRAG(TypedDict):
     messages: Annotated[List,add_messages]
-    retrieve_docs: List[str] = []
-    tavily_results: list[str] = []
-    answer: str = ""
-    recall_check_result: str = ""
+    retrieve_docs: List[str]
+    tavily_results: list[str]
+    answer: str
+    recall_check_result: str

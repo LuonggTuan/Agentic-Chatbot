@@ -1,6 +1,6 @@
 from langchain_community.document_loaders import TextLoader, PyPDFLoader, Docx2txtLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain_community.vectorstores import Chroma
+from langchain_chroma import Chroma
 import os
 import tempfile
 from src.LangGraph.vectorstore.embedding_model.all_MiniLM_model import AllMiniLMModel
@@ -45,5 +45,6 @@ def ingest_uploaded_file(uploaded_file, embedding_model: str, vectorstore_path: 
             os.remove(tmp_file_path)
 
 def get_retriever(vectorstore_path: str, embedding_model: str):
-    vectorstore = Chroma(persist_directory=vectorstore_path, embedding_model=embedding_model)
+    embedding_model = AllMiniLMModel(embedding_model).get_embedding_model()
+    vectorstore = Chroma(persist_directory=vectorstore_path, embedding_function=embedding_model)
     return vectorstore.as_retriever(search_kwargs={"k": 5})

@@ -47,11 +47,11 @@ def load_langgraph_agenticai_app():
                 return
             
             ## Graph Builder
-            if usecase == "Chatbot With RAG":
-                vectorstore_path = user_input.get("vectorstore_path")
-                embedding_model = user_input.get("embedding_model")
+            if usecase == "Chatbot with RAG":
+                vectorstore_path = user_input.get("vectorstore_path") or st.session_state.get("vectorstore_path")
+                embedding_model = user_input.get("embedding_model") or st.session_state.get("embedding_model")
                 if not vectorstore_path or not embedding_model:
-                    st.error("Error: Vectorstore path or embedding model not provided.")
+                    st.error(f"Error: Vectorstore path {vectorstore_path} and embedding model {embedding_model} not provided.")
                     return
                 graph_builder = RAGGraphBuilder(model, vectorstore_path, embedding_model)
             else:
@@ -66,7 +66,7 @@ def load_langgraph_agenticai_app():
                 return
 
         except Exception as e:
-             st.error(f"Error: Graph set up failed- {e}")
-             return   
+            st.error(f"Error: Graph failed- {e}")
+            return
 
     

@@ -86,7 +86,6 @@ class GraphBuilder:
 class RAGGraphBuilder(GraphBuilder):
     def __init__(self,model, vectorstore_path, embedding_model):
         self.llm=model
-        self.graph_builder=StateGraph(State)
         self.rag_graph_builder=StateGraph(StateRAG)
         self.vectorstore_path = vectorstore_path
         self.embedding_model = embedding_model
@@ -100,7 +99,7 @@ class RAGGraphBuilder(GraphBuilder):
         self.rag_graph_builder.add_node("use_rag", self.rag_chatbot_node.rag_node)
         self.rag_graph_builder.add_node("use_tavily", self.rag_chatbot_node.tavily_tool_node)
 
-        self.rag_graph_builder.set_entry_point("retrieve_internal")
+        self.rag_graph_builder.add_edge(START, "retrieve_internal")
         self.rag_graph_builder.add_edge("retrieve_internal", "check_recall")
         self.rag_graph_builder.add_conditional_edges(
             "check_recall", 
