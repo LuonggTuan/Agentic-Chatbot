@@ -46,12 +46,19 @@ class ChatbotWithRAG:
         return state
 
     def tavily_tool_node(self, state: StateRAG) -> StateRAG:
-        tool_node = create_tool_node(self.tools)
-        updated_state = tool_node.invoke(state)
+        query = state["messages"][-1].content
+        tavily = self.tools[0]
+        results = tavily.invoke({"query": query})
+        state["tavily_results"] = [r.get("content", "") for r in results]
 
-        # Đảm bảo cập nhật answer + kết quả tìm kiếm nếu có
-        state["answer"] = updated_state["answer"]
-        state["tavily_results"] = updated_state["tavily_results"] or []
+        prompt = ChatPromptTemplate.from_messages([
+            ("system", "Bạn là trợ lý AI, hãy trả lời ngắn gọn dựa trên kết quả tìm kiếm:\n{web}"),
+            MessagesPlaceholder("messages"),
+        ])
+        chain = prompt | self.llm
+        result = chain.invoke({"web": "\n".join(state["tavily_results"]), "messages": state["messages"]})
+
+        state["answer"] = result.content.strip()
         return state
 
 
